@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculus in Agro Product Tech: Palm Oil Yield</title>
+    
+    <!-- Tailwind CSS for modern, responsive styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for data visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- MathJax for rendering calculus formulas beautifully -->
+    <script>
+        MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
+    <style>
+        /* Custom animation for the click hint */
+        @keyframes pulse-text {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; color: #f59e0b; }
+        }
+        .animate-pulse-text {
+            animation: pulse-text 2s infinite;
+        }
+        canvas {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased selection:bg-amber-200">
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header -->
+        <header class="mb-10 text-center md:text-left">
+            <div class="flex items-center justify-center md:justify-start gap-3 mb-2">
+                <svg class="w-8 h-8 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Agro Product Tech: Derivative Analysis</h1>
+            </div>
+            <p class="text-lg text-slate-600">Applying $f'(x)$ to optimize Palm Oil (Elaeis guineensis) harvesting timelines in Malaysia.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Context & Math -->
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                    <h2 class="text-xl font-bold text-emerald-800 mb-3">The Bioscience Problem</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                        In the palm oil industry, maximizing the <strong>Oil Extraction Rate (OER)</strong> is vital for mills. Mesocarp oil accumulates in the fruit over time following a logistic S-curve. If harvested too early, oil yield is low. If harvested too late, Free Fatty Acids (FFA) rise, degrading quality. 
+                    </p>
+                    <p class="text-xs text-slate-500 italic border-l-4 border-emerald-500 pl-3">
+                        Data scenario modeled on realistic parameters from the <strong>Malaysian Palm Oil Board (MPOB)</strong> and <strong>Journal of Oil Palm Research (JOPR)</strong> crop growth models.
+                    </p>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 overflow-x-auto">
+                    <h2 class="text-xl font-bold text-slate-800 mb-3">The Mathematics</h2>
+                    
+                    <p class="text-sm text-slate-600 mb-2"><strong>Function $f(x)$: Total Oil Content</strong></p>
+                    <p class="text-xs text-slate-500 mb-2">Where $x$ is Weeks After Anthesis (WAA).</p>
+                    <div class="bg-slate-50 p-3 rounded-lg mb-4 flex justify-center text-sm">
+                        $$ f(x) = \frac{75}{1 + e^{-1.2(x - 16)}} $$
+                    </div>
+
+                    <p class="text-sm text-slate-600 mb-2"><strong>Derivative $f'(x)$: Rate of Accumulation</strong></p>
+                    <p class="text-xs text-slate-500 mb-2">The speed at which oil is being produced (% per week).</p>
+                    <div class="bg-slate-50 p-3 rounded-lg flex justify-center text-sm">
+                        $$ f'(x) = \frac{90 e^{-1.2(x - 16)}}{(1 + e^{-1.2(x - 16)})^2} $$
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Interactive Chart & Analysis Panel -->
+            <div class="lg:col-span-2 space-y-6">
+                
+                <!-- Chart Container -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-lg font-bold text-slate-800">Oil Accumulation Curve</h2>
+                        <span id="interaction-hint" class="text-sm font-semibold text-emerald-600 opacity-0 transition-opacity duration-500">
+                            👆 Click a point on the curve!
+                        </span>
+                    </div>
+                    <div class="relative h-[60vh] lg:h-[450px] w-full">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Dynamic Analysis Panel -->
+                <div id="analysis-panel" class="bg-emerald-900 text-white rounded-2xl shadow-lg p-6 hidden transform transition-all duration-300 translate-y-4">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-xl font-bold text-amber-400 mb-1">Point Analysis: <span id="val-week"></span> Weeks</h3>
+                            <div class="flex gap-6 mt-4">
+                                <div>
+                                    <p class="text-emerald-300 text-sm">Total Oil $f(x)$</p>
+                                    <p class="text-2xl font-semibold"><span id="val-oil"></span>%</p>
+                                </div>
+                                <div>
+                                    <p class="text-emerald-300 text-sm">Rate of Change $f'(x)$</p>
+                                    <p class="text-2xl font-semibold"><span id="val-rate"></span> <span class="text-sm font-normal text-emerald-400">%/week</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-emerald-800 p-3 rounded-xl max-w-xs border border-emerald-700">
+                            <p class="text-xs text-emerald-200 uppercase tracking-wider font-bold mb-1">Agro-Tech Layman Explanation</p>
+                            <p id="val-explanation" class="text-sm leading-snug"></p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Bioscience Mathematical Model ---
+        const L = 75;    // Maximum oil content (~75% of dry mesocarp weight)
+        const k = 1.2;   // Logistic growth steepness
+        const x0 = 16;   // Midpoint of growth (16 Weeks After Anthesis)
+
+        // Generate full dataset
+        const rawData = [];
+        for (let x = 10; x <= 22; x += 0.5) {
+            // Function f(x): Logistic growth
+            const fx = L / (1 + Math.exp(-k * (x - x0)));
+            
+            // Derivative f'(x): Rate of change using chain/quotient rule
+            const dfx = (L * k * Math.exp(-k * (x - x0))) / Math.pow(1 + Math.exp(-k * (x - x0)), 2);
+            
+            rawData.push({ x: x, y: fx, derivative: dfx });
+        }
+
+        // --- 2. Chart.js Initialization ---
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [
+                    {
+                        label: 'Total Oil Content (%) f(x)',
+                        data: [], // Will be populated by animation
+                        borderColor: '#f59e0b', // amber-500
+                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#d97706',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 8,
+                        pointHoverBackgroundColor: '#f59e0b',
+                        fill: true,
+                        tension: 0.4 // Smooth curve
+                    },
+                    {
+                        label: "Tangent Line f'(x)",
+                        data: [], // Populated on click
+                        borderColor: '#10b981', // emerald-500
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: true
+                },
+                scales: {
+                    x: {
+                        type: 'linear',
+                        title: { display: true, text: 'Time (Weeks After Anthesis - WAA)', font: {weight: 'bold'} },
+                        min: 9.5,
+                        max: 22.5,
+                        grid: { color: '#f1f5f9' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Mesocarp Oil (% Dry Weight)', font: {weight: 'bold'} },
+                        min: 0,
+                        max: 85,
+                        grid: { color: '#f1f5f9' }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                if (context.datasetIndex === 1) return null; // Hide tooltip for tangent
+                                return `Oil Content: ${context.parsed.y.toFixed(2)}%`;
+                            }
+                        }
+                    }
+                },
+                onClick: (evt, activeElements) => handleChartClick(activeElements)
+            }
+        });
+
+        // --- 3. Progressive Drawing Animation ---
+        let currentIndex = 0;
+        const animationSpeed = 40; // ms per point
+
+        const drawingInterval = setInterval(() => {
+            if (currentIndex < rawData.length) {
+                chart.data.datasets[0].data.push({
+                    x: rawData[currentIndex].x,
+                    y: rawData[currentIndex].y
+                });
+                chart.update('none'); // Update without full animation re-render
+                currentIndex++;
+            } else {
+                clearInterval(drawingInterval);
+                // Reveal interaction hint
+                const hint = document.getElementById('interaction-hint');
+                hint.classList.remove('opacity-0');
+                hint.classList.add('animate-pulse-text');
+            }
+        }, animationSpeed);
+
+
+        // --- 4. Interactive Derivative Analysis (The Core Feature) ---
+        function handleChartClick(activeElements) {
+            if (!activeElements || activeElements.length === 0) return;
+
+            // Get the clicked data point
+            const dataIndex = activeElements[0].index;
+            const pointData = rawData[dataIndex];
+            
+            const x_c = pointData.x;
+            const y_c = pointData.y;
+            const slope = pointData.derivative; // This is f'(x)
+
+            // Draw Tangent Line: y - y_c = m(x - x_c)  =>  y = m(x - x_c) + y_c
+            // Create a line segment 3 units wide centered on the click
+            const span = 1.5; 
+            const tangentData = [
+                { x: x_c - span, y: slope * ((x_c - span) - x_c) + y_c },
+                { x: x_c + span, y: slope * ((x_c + span) - x_c) + y_c }
+            ];
+
+            chart.data.datasets[1].data = tangentData;
+            chart.update();
+
+            // Update DOM Analysis Panel
+            document.getElementById('val-week').textContent = x_c.toFixed(1);
+            document.getElementById('val-oil').textContent = y_c.toFixed(1);
+            document.getElementById('val-rate').textContent = slope.toFixed(2);
+
+            // Generate Bioscience / Agro-Tech explanation based on the derivative
+            let explanation = "";
+            
+            if (x_c < 14) {
+                explanation = "Lag Phase: The mesocarp is mostly water and carbohydrates right now. The rate of oil synthesis (derivative) is very low. Harvesting now yields almost zero commercial oil.";
+            } else if (x_c >= 14 && x_c <= 17.5) {
+                explanation = "Exponential Phase: Look at that steep tangent line! The derivative is highly positive. The plant is actively converting sugars into lipids. Never harvest during this massive yield-building window.";
+            } else if (x_c > 17.5 && x_c < 20) {
+                explanation = "Deceleration Phase: The rate of change is dropping. The fruit's 'oil tank' is nearly full. Mill processing engineers start preparing for this incoming batch.";
+            } else {
+                explanation = "Plateau / Optimum Harvest: The derivative f'(x) is practically zero, meaning oil accumulation has stopped. This is the optimal window to harvest FFB before fruit detachment drops loose fruits on the ground and Free Fatty Acids (FFA) degrade oil quality.";
+            }
+
+            document.getElementById('val-explanation').textContent = explanation;
+
+            // Reveal and animate the panel
+            const panel = document.getElementById('analysis-panel');
+            panel.classList.remove('hidden');
+            // Small delay to allow display:block to apply before animating transform
+            setTimeout(() => {
+                panel.classList.remove('translate-y-4', 'opacity-0');
+            }, 10);
+        }
+    </script>
+</body>
+</html>
